@@ -6,7 +6,7 @@ import pathlib
 import argparse
 import logging
 
-import cv2 as cv
+from pytube import YouTube
 
 
 # setting for argparse
@@ -34,6 +34,7 @@ logger.addHandler(_console_handler)
 
 if __name__ == "__main__":
     data_dir = pathlib.Path(args.dataset_dir).resolve()
+    video_dir = os.path.join(data_dir, 'downloaded_videos')
     csv_file_names = [
         'countix_train.csv',
         'countix_val.csv',
@@ -45,7 +46,11 @@ if __name__ == "__main__":
             csv_reader = csv.DictReader(csv_file)
 
             for row in csv_reader:
-                print(row)
+                url = 'http://youtube.com/watch?v={}'.format(row['video_id'])
+                YouTube(url).streams.first().download(
+                    output_path=video_dir,
+                    filename=row['video_id']
+                )
 
                 break
         break
