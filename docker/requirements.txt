@@ -3,3 +3,4 @@ numpy
 opencv-python
 opencv-contrib-python
 pytube3
+tqdm

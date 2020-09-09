@@ -5,6 +5,7 @@ import time
 import pathlib
 import argparse
 import logging
+from tqdm import tqdm
 
 from pytube import YouTube
 
@@ -41,16 +42,29 @@ if __name__ == "__main__":
         'countix_test.csv'
     ]
 
+    logger.info(f'command line arguments: {args}')
+
     for csv_file_name in csv_file_names:
+        logger.info(f'load {csv_file_name}')
+
         with open(os.path.join(data_dir, csv_file_name)) as csv_file:
             csv_reader = csv.DictReader(csv_file)
 
             for row in csv_reader:
                 url = 'http://youtube.com/watch?v={}'.format(row['video_id'])
-                YouTube(url).streams.first().download(
-                    output_path=video_dir,
-                    filename=row['video_id']
-                )
+                logger.debug(url)
 
-                break
-        break
+                # check if the video was already downloaded
+                if os.path.exists(os.path.join(video_dir, f"{row['video_id']}.mp4")):
+                    continue
+
+                # download
+                try:
+                    yt = YouTube(url)
+                    yt.streams.filter(progressive=True, file_extension='mp4').first().download(
+                        output_path=video_dir,
+                        filename=row['video_id'],
+                        skip_existing=True
+                    )
+                except Exception as e:
+                    logger.debug(f'{url}: {e}')
