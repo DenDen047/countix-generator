@@ -11,5 +11,5 @@ docker run -it --rm \
     -w /src \
     ${IMAGE_NAME} \
     /bin/bash -c " \
-        python main.py \
+        python main.py --logging\
     "
