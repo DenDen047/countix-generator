@@ -2,6 +2,7 @@ import os
 import sys
 import csv
 import time
+import pathlib
 import argparse
 import logging
 
@@ -32,4 +33,19 @@ logger.addHandler(_console_handler)
 
 
 if __name__ == "__main__":
-    print('good!')
+    data_dir = pathlib.Path(args.dataset_dir).resolve()
+    csv_file_names = [
+        'countix_train.csv',
+        'countix_val.csv',
+        'countix_test.csv'
+    ]
+
+    for csv_file_name in csv_file_names:
+        with open(os.path.join(data_dir, csv_file_name)) as csv_file:
+            csv_reader = csv.DictReader(csv_file)
+
+            for row in csv_reader:
+                print(row)
+
+                break
+        break
