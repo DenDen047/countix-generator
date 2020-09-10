@@ -94,6 +94,10 @@ if __name__ == "__main__":
         'countix_test.csv'
     ]
 
+    os.makedirs(data_dir, exist_ok=True)
+    os.makedirs(video_dir, exist_ok=True)
+    os.makedirs(npz_dir, exist_ok=True)
+
     logger.info(f'command line arguments: {args}')
 
     for csv_file_name in csv_file_names:
@@ -122,18 +126,27 @@ if __name__ == "__main__":
                     imgs, vid_info = read_video(video_fpath)
                     n_frames, w, h, c = imgs.shape
 
-                    pprint(imgs.shape)
-                    pprint(vid_info)
-                    sys.exit()
+                    def t2f(time):  # time to frame
+                        return time * n_frames / vid_info['time']
 
-                    period_length = row['count']
+                    rep_start = float(row['repetition_start'])
+                    rep_end = float(row['repetition_end'])
+                    n_rep = float(row['count'])
+
+                    period_length = t2f(rep_end - rep_start) / n_rep
 
                     periodicities = np.zeros((n_frames,))
+                    periodicities[
+                        round(t2f(rep_start)):round(t2f(rep_end))+1
+                    ] = 1
+
+                    print(periodicities)
+                    print(period_length)
 
                     # save data & remove the video
-                    np.saves_compressed(
+                    np.savez_compressed(
                         os.path.join(npz_dir, row['video_id']),
-                        imgs
+                        imgs, periodicities, period_length
                     )
                     os.remove(video_fpath)
                 break
