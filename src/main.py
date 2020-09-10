@@ -7,7 +7,7 @@ import argparse
 import logging
 from tqdm import tqdm
 
-from pytube import YouTube
+import youtube_dl
 
 
 # setting for argparse
@@ -33,6 +33,27 @@ _console_handler.setLevel(logging.DEBUG)
 logger.addHandler(_console_handler)
 
 
+def download_video_from_url(
+    url_to_video: str,
+    path_to_video: str,
+    skip_existing_videos: bool = True
+) -> str:
+    # This function is copied from https://colab.research.google.com/github/google-research/google-research/blob/master/repnet/repnet_colab.ipynb
+
+    if os.path.exists(path_to_video):
+        if skip_existing_videos:
+            return 'skipped'
+        else:
+            os.remove(path_to_video)
+    ydl_opts = {
+        'format': 'bestvideo[ext=mp4]+bestaudio[ext=m4a]/mp4',
+        'outtmpl': str(path_to_video),
+    }
+    with youtube_dl.YoutubeDL(ydl_opts) as ydl:
+        ydl.download([url_to_video])
+        return 'success'
+
+
 if __name__ == "__main__":
     data_dir = pathlib.Path(args.dataset_dir).resolve()
     video_dir = os.path.join(data_dir, 'downloaded_videos')
@@ -55,16 +76,13 @@ if __name__ == "__main__":
                 logger.debug(url)
 
                 # check if the video was already downloaded
-                if os.path.exists(os.path.join(video_dir, f"{row['video_id']}.mp4")):
+                video_fpath = os.path.join(video_dir, f"{row['video_id']}.mp4")
+                if os.path.exists(video_fpath):
                     continue
 
                 # download
-                try:
-                    yt = YouTube(url)
-                    yt.streams.filter(progressive=True, file_extension='mp4').first().download(
-                        output_path=video_dir,
-                        filename=row['video_id'],
-                        skip_existing=True
-                    )
-                except Exception as e:
-                    logger.debug(f'{url}: {e}')
+                r = download_video_from_url(
+                    url_to_video=url,
+                    path_to_video=video_fpath
+                )
+
