@@ -11,5 +11,7 @@ docker run -it --rm \
     -w /src \
     ${IMAGE_NAME} \
     /bin/bash -c " \
-        python main.py --logging\
+        python main.py \
+            --logging \
+            --reshape_video \
     "

@@ -6,6 +6,9 @@ import pathlib
 import argparse
 import logging
 from tqdm import tqdm
+import cv2 as cv
+import numpy as np
+from pprint import pprint
 
 import youtube_dl
 
@@ -13,6 +16,7 @@ import youtube_dl
 # setting for argparse
 parser = argparse.ArgumentParser(description='Analysis an image showing company structure')
 parser.add_argument('--dataset_dir', type=str, default='/data', help='the directory path where the countix csv files and outputs are')
+parser.add_argument('--reshape_video', action='store_true', default=False, help='to save the space, the downloaded videos are reshaped into 224x224')
 parser.add_argument('--logging', action='store_true', default=False, help='if true, output the all image/pdf files during the process')
 
 args = parser.parse_args()
@@ -38,7 +42,7 @@ def download_video_from_url(
     path_to_video: str,
     skip_existing_videos: bool = True
 ) -> str:
-    # This function is copied from https://colab.research.google.com/github/google-research/google-research/blob/master/repnet/repnet_colab.ipynb
+    """ This function is copied from https://colab.research.google.com/github/google-research/google-research/blob/master/repnet/repnet_colab.ipynb """
 
     if os.path.exists(path_to_video):
         if skip_existing_videos:
@@ -54,9 +58,36 @@ def download_video_from_url(
         return 'success'
 
 
+def read_video(
+    video_filename: str,
+    width: int = 224,
+    height: int = 224
+):
+    """Read video from file."""
+    cap = cv.VideoCapture(video_filename)
+    info = {
+        'fps': cap.get(cv.CAP_PROP_FPS),
+        'n_frame': cap.get(cv.CAP_PROP_FRAME_COUNT),
+    }
+    frames = []
+    if cap.isOpened():
+        while True:
+            success, frame_bgr = cap.read()
+            if not success:
+                break
+            frame_rgb = cv.cvtColor(frame_bgr, cv.COLOR_BGR2RGB)
+            frame_rgb = cv.resize(frame_rgb, (width, height))
+            frames.append(frame_rgb)
+            info['time'] = cap.get(cv.CAP_PROP_POS_MSEC)  # milliseconds
+    frames = np.asarray(frames)
+    info['time'] /= 1000.0  # milliseconds to seconds
+    return frames, info
+
+
 if __name__ == "__main__":
     data_dir = pathlib.Path(args.dataset_dir).resolve()
     video_dir = os.path.join(data_dir, 'downloaded_videos')
+    npz_dir = os.path.join(data_dir, 'video_frame_data')
     csv_file_names = [
         'countix_train.csv',
         'countix_val.csv',
@@ -86,6 +117,25 @@ if __name__ == "__main__":
                     path_to_video=video_fpath
                 )
 
+                # reshape the video
+                if args.reshape_video:
+                    imgs, vid_info = read_video(video_fpath)
+                    n_frames, w, h, c = imgs.shape
+
+                    pprint(imgs.shape)
+                    pprint(vid_info)
+                    sys.exit()
+
+                    period_length = row['count']
+
+                    periodicities = np.zeros((n_frames,))
+
+                    # save data & remove the video
+                    np.saves_compressed(
+                        os.path.join(npz_dir, row['video_id']),
+                        imgs
+                    )
+                    os.remove(video_fpath)
                 break
         break
 
