@@ -142,9 +142,6 @@ if __name__ == "__main__":
                         round(t2f(rep_start)):round(t2f(rep_end))+1
                     ] = 1
 
-                    print(periodicities)
-                    print(period_length)
-
                     # save data & remove the video
                     np.savez_compressed(
                         os.path.join(npz_dir, row['video_id']),
