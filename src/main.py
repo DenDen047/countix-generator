@@ -78,9 +78,8 @@ def read_video(
             frame_rgb = cv.cvtColor(frame_bgr, cv.COLOR_BGR2RGB)
             frame_rgb = cv.resize(frame_rgb, (width, height))
             frames.append(frame_rgb)
-            info['time'] = cap.get(cv.CAP_PROP_POS_MSEC)  # milliseconds
+            info['time'] = cap.get(cv.CAP_PROP_POS_MSEC) / 1000.0  # seconds
     frames = np.asarray(frames)
-    info['time'] /= 1000.0  # milliseconds to seconds
     return frames, info
 
 
@@ -116,10 +115,13 @@ if __name__ == "__main__":
                     continue
 
                 # download
-                r = download_video_from_url(
-                    url_to_video=url,
-                    path_to_video=video_fpath
-                )
+                try:
+                    r = download_video_from_url(
+                        url_to_video=url,
+                        path_to_video=video_fpath
+                    )
+                except Exception as e:
+                    logger.debug(e)
 
                 # reshape the video
                 if args.reshape_video:
@@ -149,6 +151,3 @@ if __name__ == "__main__":
                         imgs, periodicities, period_length
                     )
                     os.remove(video_fpath)
-                break
-        break
-
